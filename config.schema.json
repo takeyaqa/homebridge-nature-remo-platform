@@ -6,13 +6,13 @@
     "type": "object",
     "properties": {
       "name": {
-        "title": "名前",
+        "title": "Name",
         "type": "string",
         "required": true,
         "default": "Nature Remo Platform"
       },
       "accessToken": {
-        "title": "アクセストークン",
+        "title": "Access Token",
         "type": "string",
         "required": true
       }
