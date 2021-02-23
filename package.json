@@ -1,0 +1,40 @@
+{
+  "private": true,
+  "displayName": "Homebridge Nature Remo Platform",
+  "name": "@takeya0x86/homebridge-nature-remo-platform",
+  "version": "0.1.0",
+  "description": "Homebridge Nature Remo Platform.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/takeya0x86/homebridge-nature-remo-platform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/takeya0x86/homebridge-nature-remo-platform/issues"
+  },
+  "engines": {
+    "node": ">=10.17.0",
+    "homebridge": ">=1.0.0"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint src/**.ts --max-warnings=0",
+    "watch": "npm run build && npm link && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "devDependencies": {
+    "@types/node": "^14.14.22",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
+    "eslint": "^7.18.0",
+    "homebridge": "^1.2.5",
+    "nodemon": "^2.0.7",
+    "rimraf": "^3.0.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
+  }
+}

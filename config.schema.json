@@ -1,0 +1,21 @@
+{
+  "pluginAlias": "NatureRemoPlatformPlugin",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "名前",
+        "type": "string",
+        "required": true,
+        "default": "Nature Remo Platform"
+      },
+      "accessToken": {
+        "title": "アクセストークン",
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+}
