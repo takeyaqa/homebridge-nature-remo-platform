@@ -1,8 +1,7 @@
 {
-  "private": true,
   "displayName": "Homebridge Nature Remo Platform",
   "name": "@takeya0x86/homebridge-nature-remo-platform",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.1",
   "description": "Homebridge Nature Remo Platform.",
   "license": "Apache-2.0",
   "repository": {
