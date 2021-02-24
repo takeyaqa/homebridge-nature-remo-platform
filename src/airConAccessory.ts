@@ -55,7 +55,7 @@ export class NatureNemoAirConAccessory {
 
   getCurrentHeatingCoolingState(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getCurrentHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConAppliance(this.id).then((appliance) => {
+    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
       this.platform.logger.info('[%s] Current Heater Cooler State -> %s, %s', this.name, appliance.on, appliance.mode);
       const state = this.convertHeatingCoolingState(appliance.on, appliance.mode);
       callback(null, state);
@@ -67,7 +67,7 @@ export class NatureNemoAirConAccessory {
 
   getTargetHeatingCoolingState(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getTargetHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConAppliance(this.id).then((appliance) => {
+    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
       this.platform.logger.info('[%s] Target Heater Cooler State -> %s, %s', this.name, appliance.on, appliance.mode);
       const state = this.convertHeatingCoolingState(appliance.on, appliance.mode);
       this.state.targetHeatingCoolingState = state;
@@ -111,7 +111,7 @@ export class NatureNemoAirConAccessory {
   }
 
   getCurrentTemperature(callback: CharacteristicGetCallback): void {
-    this.platform.natureRemoApi.getDevice(this.deviceId).then((device) => {
+    this.platform.natureRemoApi.getSensorValue(this.deviceId).then((device) => {
       this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.te);
       callback(null, device.te);
     }).catch((err) => {
@@ -122,7 +122,7 @@ export class NatureNemoAirConAccessory {
 
   getTargetTemperature(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getTargetTemperature called');
-    this.platform.natureRemoApi.getAirConAppliance(this.id).then((appliance) => {
+    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
       this.platform.logger.info('[%s] Target Temperature -> %s', this.name, appliance.temp);
       this.state.targetTemperature = parseFloat(appliance.temp);
       callback(null, appliance.temp);
@@ -155,6 +155,7 @@ export class NatureNemoAirConAccessory {
   }
 
   getTemperatureDisplayUnits(callback: CharacteristicGetCallback): void {
+    this.platform.logger.debug('getTemperatureDisplayUnits called');
     callback(null, this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
   }
 

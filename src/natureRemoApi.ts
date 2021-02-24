@@ -46,11 +46,11 @@ interface AirConState {
   temp: string;
 }
 
-interface LightValue {
+interface LightState {
   on: boolean;
 }
 
-interface DeviceState {
+interface SensorValue {
   te: number;
   hu: number;
   il: number;
@@ -112,7 +112,7 @@ export class NatureRemoApi {
     }
   }
 
-  async getAirConAppliance(id: string): Promise<AirConState> {
+  async getAirConState(id: string): Promise<AirConState> {
     const appliances = await this.getAllAppliances();
     let airConState: AirConState | null = null;
     for (const data of appliances) {
@@ -132,9 +132,9 @@ export class NatureRemoApi {
     }
   }
 
-  async getLightAppliance(id: string): Promise<LightValue> {
+  async getLightState(id: string): Promise<LightState> {
     const appliances = await this.getAllAppliances();
-    let lightState: LightValue | null = null;
+    let lightState: LightState | null = null;
     for (const data of appliances) {
       if (data.type === 'LIGHT' && data.id === id) {
         lightState = {
@@ -150,21 +150,24 @@ export class NatureRemoApi {
     }
   }
 
-  async getDevice(id: string): Promise<DeviceState> {
+  async getSensorValue(id: string): Promise<SensorValue> {
     const rawData = await this.getAllDevices();
-    let deviceState: DeviceState | null = null;
+    let sensorValue: SensorValue | null = null;
     for (const data of rawData) {
       if (data.id === id) {
-        deviceState = {
+        sensorValue = {
           te: data.newest_events.te.val,
           hu: data.newest_events.hu.val,
           il: data.newest_events.il.val,
         };
+        if (sensorValue.il <= 0) {
+          sensorValue.il = 0.0001;
+        }
         break;
       }
     }
-    if (deviceState) {
-      return deviceState;
+    if (sensorValue) {
+      return sensorValue;
     } else {
       throw new Error(`Cannnot find device -> ${id}`);
     }
