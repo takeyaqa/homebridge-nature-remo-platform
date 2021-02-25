@@ -55,9 +55,9 @@ export class NatureNemoAirConAccessory {
 
   getCurrentHeatingCoolingState(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getCurrentHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
-      this.platform.logger.info('[%s] Current Heater Cooler State -> %s, %s', this.name, appliance.on, appliance.mode);
-      const state = this.convertHeatingCoolingState(appliance.on, appliance.mode);
+    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+      this.platform.logger.info('[%s] Current Heater Cooler State -> %s, %s', this.name, airConState.on, airConState.mode);
+      const state = this.convertHeatingCoolingState(airConState.on, airConState.mode);
       callback(null, state);
     }).catch((err) => {
       this.platform.logger.error(err.message);
@@ -67,9 +67,9 @@ export class NatureNemoAirConAccessory {
 
   getTargetHeatingCoolingState(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getTargetHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
-      this.platform.logger.info('[%s] Target Heater Cooler State -> %s, %s', this.name, appliance.on, appliance.mode);
-      const state = this.convertHeatingCoolingState(appliance.on, appliance.mode);
+    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+      this.platform.logger.info('[%s] Target Heater Cooler State -> %s, %s', this.name, airConState.on, airConState.mode);
+      const state = this.convertHeatingCoolingState(airConState.on, airConState.mode);
       this.state.targetHeatingCoolingState = state;
       callback(null, state);
     }).catch((err) => {
@@ -111,9 +111,9 @@ export class NatureNemoAirConAccessory {
   }
 
   getCurrentTemperature(callback: CharacteristicGetCallback): void {
-    this.platform.natureRemoApi.getSensorValue(this.deviceId).then((device) => {
-      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.te);
-      callback(null, device.te);
+    this.platform.natureRemoApi.getSensorValue(this.deviceId).then((sensorValue) => {
+      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
+      callback(null, sensorValue.te);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);
@@ -122,10 +122,10 @@ export class NatureNemoAirConAccessory {
 
   getTargetTemperature(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getTargetTemperature called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((appliance) => {
-      this.platform.logger.info('[%s] Target Temperature -> %s', this.name, appliance.temp);
-      this.state.targetTemperature = parseFloat(appliance.temp);
-      callback(null, appliance.temp);
+    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+      this.platform.logger.info('[%s] Target Temperature -> %s', this.name, airConState.temp);
+      this.state.targetTemperature = parseFloat(airConState.temp);
+      callback(null, airConState.temp);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);

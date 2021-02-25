@@ -36,9 +36,9 @@ export class NatureNemoLightAccessory {
 
   getOn(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getOn called');
-    this.platform.natureRemoApi.getLightState(this.id).then((appliance) => {
-      this.platform.logger.info('[%s] On -> %s', this.name, appliance.on);
-      callback(null, appliance.on);
+    this.platform.natureRemoApi.getLightState(this.id).then((lightState) => {
+      this.platform.logger.info('[%s] On -> %s', this.name, lightState.on);
+      callback(null, lightState.on);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);

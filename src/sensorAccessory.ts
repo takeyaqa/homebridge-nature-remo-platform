@@ -7,6 +7,8 @@ import {
 
 import { NatureRemoPlatform } from './platform';
 
+const UPDATE_INTERVAL = 1000 * 60 * 5;
+
 export class NatureNemoSensorAccessory {
   private readonly service: Service;
   private readonly name: string;
@@ -46,24 +48,24 @@ export class NatureNemoSensorAccessory {
   
     setInterval(() => {
       this.platform.logger.info('[%s] Update sensor values', this.name);      
-      this.platform.natureRemoApi.getSensorValue(this.id).then((device) => {
-        this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.te);
-        this.platform.logger.info('[%s] Current Humidity -> %s', this.name, device.hu);
-        this.platform.logger.info('[%s] Current Light Level -> %s', this.name, device.il);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, device.te);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, device.hu);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, device.il); 
+      this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
+        this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
+        this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
+        this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, sensorValue.te);
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, sensorValue.hu);
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, sensorValue.il); 
       }).catch((err) => {
         this.platform.logger.error(err.message);
       });
-    }, 1000 * 60 * 5);
+    }, UPDATE_INTERVAL);
   }
 
   getCurrentTemperature(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getCurrentTemperature called');
-    this.platform.natureRemoApi.getSensorValue(this.id).then((device) => {
-      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.te);
-      callback(null, device.te);
+    this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
+      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
+      callback(null, sensorValue.te);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);
@@ -72,9 +74,9 @@ export class NatureNemoSensorAccessory {
 
   getCurrentHumidity(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getCurrentHumidity called');
-    this.platform.natureRemoApi.getSensorValue(this.id).then((device) => {
-      this.platform.logger.info('[%s] Current Humidity -> %s', this.name, device.hu);
-      callback(null, device.hu);
+    this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
+      this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
+      callback(null, sensorValue.hu);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);
@@ -83,9 +85,9 @@ export class NatureNemoSensorAccessory {
 
   getCurrentLightLevel(callback: CharacteristicGetCallback): void {
     this.platform.logger.debug('getCurrentLightLevel called');
-    this.platform.natureRemoApi.getSensorValue(this.id).then((device) => {
-      this.platform.logger.info('[%s] Current Light Level -> %s', this.name, device.il);
-      callback(null, device.il);
+    this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
+      this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
+      callback(null, sensorValue.il);
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);
