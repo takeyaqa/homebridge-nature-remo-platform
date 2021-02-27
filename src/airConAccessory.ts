@@ -90,7 +90,11 @@ export class NatureNemoAirConAccessory {
       return;
     }
     this.state.targetHeatingCoolingState = value;
-    if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
+    if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
+      const err = new Error('This plugin does not support auto');
+      this.platform.logger.error(err.message);
+      callback(err);
+    } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
       this.platform.natureRemoApi.setAirconPowerOff(this.id).then(() => {
         this.platform.logger.info('[%s] Target Heater Cooler State <- OFF', this.name);
         callback(null);
@@ -180,14 +184,10 @@ export class NatureNemoAirConAccessory {
 
   private convertOperationMode(state: number): string {
     switch (state) {
-      case this.platform.Characteristic.TargetHeatingCoolingState.OFF:
-        return 'power-off';
       case this.platform.Characteristic.TargetHeatingCoolingState.HEAT:
         return 'warm';
       case this.platform.Characteristic.TargetHeatingCoolingState.COOL:
         return 'cool';
-      case this.platform.Characteristic.TargetHeatingCoolingState.AUTO:
-        return 'auto';
       default:
         throw new Error(`This plugin does not support ${state}`);
     }
