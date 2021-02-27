@@ -114,63 +114,39 @@ export class NatureRemoApi {
 
   async getAirConState(id: string): Promise<AirConState> {
     const appliances = await this.getAllAppliances();
-    let airConState: AirConState | null = null;
-    for (const data of appliances) {
-      if (data.type === 'AC' && data.id === id) {
-        airConState = {
-          on: data.settings.button !== 'power-off',
-          mode: data.settings.mode,
-          temp: data.settings.temp,
-        };
-        break;
-      }
+    const appliance = appliances.find(val => val.type === 'AC' && val.id === id);
+    if (appliance === undefined) {
+      throw new Error(`Cannnot find appliance -> ${id}`);
     }
-    if (airConState) {
-      return airConState;
-    } else {
-      throw new Error(`Cannnot find accessory -> ${id}`);
-    }
+    return {
+      on: appliance.settings.button !== 'power-off',
+      mode: appliance.settings.mode,
+      temp: appliance.settings.temp,
+    };
   }
 
   async getLightState(id: string): Promise<LightState> {
     const appliances = await this.getAllAppliances();
-    let lightState: LightState | null = null;
-    for (const data of appliances) {
-      if (data.type === 'LIGHT' && data.id === id) {
-        lightState = {
-          on: data.light.state.power === 'on',
-        };
-        break;
-      }
+    const appliance = appliances.find(val => val.type === 'LIGHT' && val.id === id);
+    if (appliance === undefined) {
+      throw new Error(`Cannnot find appliance -> ${id}`);
     }
-    if (lightState) {
-      return lightState;
-    } else {
-      throw new Error(`Cannnot find accessory -> ${id}`);
-    }
+    return {
+      on: appliance.light.state.power === 'on',
+    };
   }
 
   async getSensorValue(id: string): Promise<SensorValue> {
-    const rawData = await this.getAllDevices();
-    let sensorValue: SensorValue | null = null;
-    for (const data of rawData) {
-      if (data.id === id) {
-        sensorValue = {
-          te: data.newest_events.te.val,
-          hu: data.newest_events.hu.val,
-          il: data.newest_events.il.val,
-        };
-        if (sensorValue.il <= 0) {
-          sensorValue.il = 0.0001;
-        }
-        break;
-      }
-    }
-    if (sensorValue) {
-      return sensorValue;
-    } else {
+    const devices = await this.getAllDevices();
+    const device = devices.find(val => val.id === id);
+    if (device === undefined) {
       throw new Error(`Cannnot find device -> ${id}`);
     }
+    return {
+      te: device.newest_events.te.val,
+      hu: device.newest_events.hu.val,
+      il: device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001,
+    };
   }
 
   async setLight(applianceId: string, power: boolean): Promise<void> {
