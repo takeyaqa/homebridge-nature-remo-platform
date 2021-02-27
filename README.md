@@ -22,7 +22,7 @@ Homebridge plugin for Nature Remo which supports lights and air conditioners. **
 
 ## Suppoerted appliances
 
-### Sensors (Nature Remo build-in)
+### Sensors (Nature Remo built-in)
 
 * Temperature
 * Humidity
