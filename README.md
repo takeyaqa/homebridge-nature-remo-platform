@@ -20,7 +20,7 @@ Homebridge plugin for Nature Remo which supports lights and air conditioners. **
 2. Click `SAVE` and restart Homebridge.
 3. The plugin detect automatically your Nature Remo devices and configured appliances.
 
-## Suppoerted appliances
+## Supported appliances
 
 ### Sensors (Nature Remo built-in)
 
