@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Nature Remo Platform",
   "name": "@takeya0x86/homebridge-nature-remo-platform",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0",
   "description": "Homebridge plugin for Nature Remo which supports lights and air conditioners.",
   "license": "Apache-2.0",
   "repository": {
