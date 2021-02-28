@@ -1,7 +1,6 @@
 import https from 'https';
 import querystring from 'querystring';
 import { IncomingMessage } from 'http';
-import { Logging } from 'homebridge';
 
 import { Mutex } from './mutex';
 
@@ -77,14 +76,12 @@ export class NatureRemoApi {
 
   constructor(
     private readonly accessToken: string,
-    private readonly logger: Logging,
   ) {}
 
   async getAllAppliances(): Promise<Appliance[]> {
     const release = await this.mutex.acquire();
     try {
       if (this.applianceCache.appliances && (Date.now() - this.applianceCache.updated) < CACHE_THRESHOLD) {
-        this.logger.debug('[NatureRemoApi] Using cached appliances');
         return this.applianceCache.appliances;
       }
       const url = `${API_URL}/1/appliances`;
@@ -100,7 +97,6 @@ export class NatureRemoApi {
     const release = await this.mutex.acquire();
     try {
       if (this.deviceCache.devices && (Date.now() - this.deviceCache.updated) < CACHE_THRESHOLD) {
-        this.logger.debug('[NatureRemoApi] Using cached devices');
         return this.deviceCache.devices;
       }
       const url = `${API_URL}/1/devices`;
@@ -179,7 +175,6 @@ export class NatureRemoApi {
         },
       };
       https.get(url, options, (res) => {
-        this.logger.debug('[NatureRemoApi] Recieved API server response');
         if (res.statusCode !== 200) {
           reject(new Error(this.getHttpErrorMessage(res)));
         } else {
@@ -210,7 +205,6 @@ export class NatureRemoApi {
         },
       };
       const req = https.request(url, options, (res) => {
-        this.logger.debug('[NatureRemoApi] Send message request');
         if (res.statusCode !== 200) {
           reject(new Error(this.getHttpErrorMessage(res)));
         } else {

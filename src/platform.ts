@@ -27,7 +27,7 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.logger.debug('accessToken ->', this.config.accessToken);
-    this.natureRemoApi = new NatureRemoApi(this.config.accessToken as string, logger);
+    this.natureRemoApi = new NatureRemoApi(this.config.accessToken as string);
     this.logger.debug('Finished initializing platform:', this.config.name);
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
