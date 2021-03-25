@@ -30,17 +30,20 @@ export class NatureNemoSensorAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .on(CharacteristicEventTypes.GET, this.getCurrentTemperature.bind(this));
 
-    this.service
-      = this.accessory.getService(this.platform.Service.HumiditySensor)
-        || this.accessory.addService(this.platform.Service.HumiditySensor);
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
-      .on(CharacteristicEventTypes.GET, this.getCurrentHumidity.bind(this));
+    // Remo-mini does not have humidity and light sensors
+    if (!accessory.context.device.firmware_version.startsWith('Remo-mini')) {
+      this.service
+        = this.accessory.getService(this.platform.Service.HumiditySensor)
+          || this.accessory.addService(this.platform.Service.HumiditySensor);
+      this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+        .on(CharacteristicEventTypes.GET, this.getCurrentHumidity.bind(this));
 
-    this.service
-      = this.accessory.getService(this.platform.Service.LightSensor)
-        || this.accessory.addService(this.platform.Service.LightSensor);
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel)
-      .on(CharacteristicEventTypes.GET, this.getCurrentLightLevel.bind(this));
+      this.service
+        = this.accessory.getService(this.platform.Service.LightSensor)
+          || this.accessory.addService(this.platform.Service.LightSensor);
+      this.service.getCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel)
+        .on(CharacteristicEventTypes.GET, this.getCurrentLightLevel.bind(this));
+    }
 
     this.platform.logger.debug('[%s] id -> %s', accessory.context.device.name, accessory.context.device.id);
     this.name = accessory.context.device.name;
