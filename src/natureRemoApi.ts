@@ -139,9 +139,9 @@ export class NatureRemoApi {
       throw new Error(`Cannnot find device -> ${id}`);
     }
     return {
-      te: device.newest_events.te.val,
-      hu: device.newest_events.hu.val,
-      il: device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001,
+      te: device.newest_events.te?.val || 0,
+      hu: device.newest_events.hu?.val || 0,
+      il: device.newest_events.il?.val >= 0.0001 ? device.newest_events.il.val : 0.0001,
     };
   }
 
