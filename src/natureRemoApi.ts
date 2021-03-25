@@ -26,6 +26,7 @@ interface Appliance {
 interface Device {
   id: string;
   name: string;
+  firmware_version: string;
   newest_events: {
     te: {
       val: number;
