@@ -35,3 +35,13 @@ Allows for on/off controls.
 ### Air conditioners
 
 Allows for on/off, temperature and mode changing controls. The mode changing only supports heating and cooling. Auto, dehumidification, blowing and any other mode are not supported.
+
+## Changelog
+
+### v1.1.0 (2021-04-11)
+
+- [#2](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/2) Support for Remo-mini -- thanks to [@w00kie](https://github.com/w00kie)
+
+### v1.0.0 (2021-02-28)
+
+- First release
