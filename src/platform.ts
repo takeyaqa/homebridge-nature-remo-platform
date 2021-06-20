@@ -54,11 +54,13 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
         this.logger.info('Restoring existing accessory from cache:', existingAccessory.displayName);
         new NatureNemoSensorAccessory(this, existingAccessory);
       } else {
-        this.logger.info('Adding new accessory:', device.name);
-        const accessory = new this.api.platformAccessory(device.name, device.id);
-        accessory.context = { device: device };
-        new NatureNemoSensorAccessory(this, accessory);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        if (!device.firmware_version.startsWith('Remo-E')) {
+          this.logger.info('Adding new accessory:', device.name);
+          const accessory = new this.api.platformAccessory(device.name, device.id);
+          accessory.context = { device: device };
+          new NatureNemoSensorAccessory(this, accessory);
+          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        }
       }
     }
     const appliances = await this.natureRemoApi.getAllAppliances();
