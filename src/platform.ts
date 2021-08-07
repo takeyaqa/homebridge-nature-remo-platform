@@ -52,13 +52,13 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.id);
       if (existingAccessory) {
         this.logger.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-        new NatureNemoSensorAccessory(this, existingAccessory);
+        new NatureNemoSensorAccessory(this, existingAccessory, device.serial_number);
       } else {
         if (!device.firmware_version.startsWith('Remo-E')) {
           this.logger.info('Adding new accessory:', device.name);
           const accessory = new this.api.platformAccessory(device.name, device.id);
           accessory.context = { device: device };
-          new NatureNemoSensorAccessory(this, accessory);
+          new NatureNemoSensorAccessory(this, accessory, device.serial_number);
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         }
       }
@@ -70,18 +70,18 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
         if (existingAccessory) {
           this.logger.info('Restoring existing accessory from cache:', existingAccessory.displayName);
           if (appliance.type === 'LIGHT') {
-            new NatureNemoLightAccessory(this, existingAccessory);
+            new NatureNemoLightAccessory(this, existingAccessory, appliance.id);
           } else if (appliance.type === 'AC') {
-            new NatureNemoAirConAccessory(this, existingAccessory);
+            new NatureNemoAirConAccessory(this, existingAccessory, appliance.id);
           }
         } else {
           this.logger.info('Adding new accessory:', appliance.nickname);
           const accessory = new this.api.platformAccessory(appliance.nickname, appliance.id);
           accessory.context = { appliance: appliance };
           if (appliance.type === 'LIGHT') {
-            new NatureNemoLightAccessory(this, accessory);
+            new NatureNemoLightAccessory(this, accessory, appliance.id);
           } else if (appliance.type === 'AC') {
-            new NatureNemoAirConAccessory(this, accessory);
+            new NatureNemoAirConAccessory(this, accessory, appliance.id);
           }
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         }
