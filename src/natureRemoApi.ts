@@ -27,6 +27,7 @@ interface Device {
   id: string;
   name: string;
   firmware_version: string;
+  serial_number: string;
   newest_events: {
     te: {
       val: number;

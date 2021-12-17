@@ -17,11 +17,12 @@ export class NatureNemoSensorAccessory {
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly serial_number: string,
   ) {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature Inc.')
       .setCharacteristic(this.platform.Characteristic.Model, 'Nature Remo series')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'S-e-r-i-a-l');
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, serial_number);
 
     this.service
       = this.accessory.getService(this.platform.Service.TemperatureSensor)
