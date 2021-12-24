@@ -1,7 +1,7 @@
 import { URLSearchParams } from 'url';
 import axios, { Axios, AxiosError } from 'axios';
+import { Mutex } from 'async-mutex';
 
-import { Mutex } from './mutex';
 import { Device, Appliance, SimpleAirConState, SimpleLightState, SimpleSensorValue, DeviceCache, ApplianceCache } from './types';
 
 const API_URL = 'https://api.nature.global/1';
@@ -23,31 +23,25 @@ export class NatureRemoApi {
   }
 
   async getAllAppliances(): Promise<Appliance[]> {
-    const release = await this.mutex.acquire();
-    try {
+    return await this.mutex.runExclusive(async () => {
       if (this.applianceCache.appliances && (Date.now() - this.applianceCache.updated) < CACHE_THRESHOLD) {
         return this.applianceCache.appliances;
       }
       const appliances = (await this.getMessage('/appliances')) as Appliance[];
       this.applianceCache = { updated: Date.now(), appliances: appliances };
-      return appliances;
-    } finally {
-      release();
-    }
+      return appliances;  
+    });
   }
 
   async getAllDevices(): Promise<Device[]> {
-    const release = await this.mutex.acquire();
-    try {
+    return await this.mutex.runExclusive(async () => {
       if (this.deviceCache.devices && (Date.now() - this.deviceCache.updated) < CACHE_THRESHOLD) {
         return this.deviceCache.devices;
       }
       const devices = (await this.getMessage('/devices')) as Device[];
       this.deviceCache = { updated: Date.now(), devices: devices };
-      return devices;
-    } finally {
-      release();
-    }
+      return devices;  
+    });
   }
 
   async getAirConState(id: string): Promise<SimpleAirConState> {

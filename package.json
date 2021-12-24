@@ -30,6 +30,7 @@
     "nature-remo"
   ],
   "dependencies": {
+    "async-mutex": "^0.3.2",
     "axios": "^0.24.0"
   },
   "devDependencies": {
