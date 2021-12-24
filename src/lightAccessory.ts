@@ -17,12 +17,11 @@ export class NatureNemoLightAccessory {
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly appliance_id: string,
   ) {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature Inc.')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Nature Remo series')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, appliance_id);
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, accessory.context.appliance.model.manufacturer)
+      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.appliance.id);
 
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.appliance.nickname);

@@ -17,12 +17,16 @@ export class NatureNemoSensorAccessory {
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly serial_number: string,
   ) {
+    const modelAndVersion = accessory.context.device.firmware_version.split('/');
+    if (modelAndVersion.length < 2) {
+      modelAndVersion.push('');
+    }
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature Inc.')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Nature Remo series')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, serial_number);
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature')
+      .setCharacteristic(this.platform.Characteristic.Model, modelAndVersion[0])
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serial_number)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, modelAndVersion[1]);
 
     this.service
       = this.accessory.getService(this.platform.Service.TemperatureSensor)
@@ -31,14 +35,15 @@ export class NatureNemoSensorAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .on(CharacteristicEventTypes.GET, this.getCurrentTemperature.bind(this));
 
-    // Remo-mini does not have humidity and light sensors
-    if (!accessory.context.device.firmware_version.startsWith('Remo-mini')) {
+    if (accessory.context.device.newest_events.hu) {
       this.service
         = this.accessory.getService(this.platform.Service.HumiditySensor)
           || this.accessory.addService(this.platform.Service.HumiditySensor);
       this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
         .on(CharacteristicEventTypes.GET, this.getCurrentHumidity.bind(this));
+    }
 
+    if (accessory.context.device.newest_events.il) {
       this.service
         = this.accessory.getService(this.platform.Service.LightSensor)
           || this.accessory.addService(this.platform.Service.LightSensor);
@@ -53,16 +58,16 @@ export class NatureNemoSensorAccessory {
     setInterval(() => {
       this.platform.logger.info('[%s] Update sensor values', this.name);      
       this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
-        this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
-        this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
-        this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
         if (sensorValue.te) {
+          this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
           this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, sensorValue.te);
         }
         if (sensorValue.hu) {
+          this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
           this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, sensorValue.hu);
         }
         if (sensorValue.il) {
+          this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
           this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, sensorValue.il);
         }
       }).catch((err) => {

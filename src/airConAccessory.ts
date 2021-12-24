@@ -23,12 +23,11 @@ export class NatureNemoAirConAccessory {
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly accesory_id: string,
   ) {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature Inc.')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Nature Remo series')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accesory_id);
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, accessory.context.appliance.model.manufacturer)
+      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.appliance.id);
 
     this.service
       = this.accessory.getService(this.platform.Service.Thermostat) || this.accessory.addService(this.platform.Service.Thermostat);
