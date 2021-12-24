@@ -56,9 +56,15 @@ export class NatureNemoSensorAccessory {
         this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
         this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
         this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, sensorValue.te);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, sensorValue.hu);
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, sensorValue.il); 
+        if (sensorValue.te) {
+          this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, sensorValue.te);
+        }
+        if (sensorValue.hu) {
+          this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, sensorValue.hu);
+        }
+        if (sensorValue.il) {
+          this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, sensorValue.il);
+        }
       }).catch((err) => {
         this.platform.logger.error(err.message);
       });

@@ -3,71 +3,10 @@ import querystring from 'querystring';
 import { IncomingMessage } from 'http';
 
 import { Mutex } from './mutex';
+import { Device, Appliance, SimpleAirConState, SimpleLightState, SimpleSensorValue, DeviceCache, ApplianceCache } from './types';
 
 const API_URL = 'https://api.nature.global';
 const CACHE_THRESHOLD = 10 * 1000;
-
-interface Appliance {
-  id: string;
-  nickname: string;
-  type: string;
-  settings: {
-    temp: string;
-    mode: string;
-    button: string;
-  };
-  light: {
-    state: {
-      power: string;
-    };
-  };
-}
-
-interface Device {
-  id: string;
-  name: string;
-  firmware_version: string;
-  serial_number: string;
-  newest_events: {
-    te: {
-      val: number;
-    };
-    hu: {
-      val: number;
-    };
-    il: {
-      val: number;
-    };
-  };
-}
-
-interface AirConState {
-  on: boolean;
-  mode: string;
-  temp: string;
-}
-
-interface LightState {
-  on: boolean;
-}
-
-interface SensorValue {
-  te: number;
-  hu: number;
-  il: number;
-}
-
-interface Cache {
-  updated: number;
-}
-
-interface ApplianceCache extends Cache {
-  appliances: Appliance[] | null;
-}
-
-interface DeviceCache extends Cache {
-  devices: Device[] | null;
-}
 
 export class NatureRemoApi {
 
@@ -110,41 +49,47 @@ export class NatureRemoApi {
     }
   }
 
-  async getAirConState(id: string): Promise<AirConState> {
+  async getAirConState(id: string): Promise<SimpleAirConState> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'AC' && val.id === id);
     if (appliance === undefined) {
       throw new Error(`Cannnot find appliance -> ${id}`);
     }
     return {
-      on: appliance.settings.button !== 'power-off',
-      mode: appliance.settings.mode,
-      temp: appliance.settings.temp,
+      on: appliance.settings?.button !== 'power-off',
+      mode: appliance.settings?.mode || '',
+      temp: appliance.settings?.temp || '',
     };
   }
 
-  async getLightState(id: string): Promise<LightState> {
+  async getLightState(id: string): Promise<SimpleLightState> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'LIGHT' && val.id === id);
     if (appliance === undefined) {
       throw new Error(`Cannnot find appliance -> ${id}`);
     }
     return {
-      on: appliance.light.state.power === 'on',
+      on: appliance.light?.state.power === 'on',
     };
   }
 
-  async getSensorValue(id: string): Promise<SensorValue> {
+  async getSensorValue(id: string): Promise<SimpleSensorValue> {
     const devices = await this.getAllDevices();
     const device = devices.find(val => val.id === id);
     if (device === undefined) {
       throw new Error(`Cannnot find device -> ${id}`);
     }
-    return {
-      te: device.newest_events.te?.val || 0,
-      hu: device.newest_events.hu?.val || 0,
-      il: device.newest_events.il?.val >= 0.0001 ? device.newest_events.il.val : 0.0001,
-    };
+    const val = {};
+    if (device.newest_events.te) {
+      val['te'] = device.newest_events.te.val;
+    }
+    if (device.newest_events.hu) {
+      val['hu'] = device.newest_events.hu.val;
+    }
+    if (device.newest_events.il) {
+      val['il'] = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
+    }
+    return val;
   }
 
   async setLight(applianceId: string, power: boolean): Promise<void> {
