@@ -2,7 +2,15 @@ import { URLSearchParams } from 'url';
 import axios, { Axios, AxiosError } from 'axios';
 import { Mutex } from 'async-mutex';
 
-import { Device, Appliance, SimpleAirConState, SimpleLightState, SimpleSensorValue, DeviceCache, ApplianceCache } from './types';
+import {
+  Appliance,
+  ApplianceCache,
+  Device,
+  DeviceCache,
+  SimpleAirConState,
+  SimpleLightState,
+  SimpleSensorValue,
+} from './types';
 
 const API_URL = 'https://api.nature.global/1';
 const CACHE_THRESHOLD = 10 * 1000;
