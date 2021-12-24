@@ -1,23 +1,26 @@
-import https from 'https';
-import querystring from 'querystring';
-import { IncomingMessage } from 'http';
+import { URLSearchParams } from 'url';
+import axios, { Axios, AxiosError } from 'axios';
 
 import { Mutex } from './mutex';
 import { Device, Appliance, SimpleAirConState, SimpleLightState, SimpleSensorValue, DeviceCache, ApplianceCache } from './types';
 
-const API_URL = 'https://api.nature.global';
+const API_URL = 'https://api.nature.global/1';
 const CACHE_THRESHOLD = 10 * 1000;
 
 export class NatureRemoApi {
 
   private readonly mutex = new Mutex();
+  private readonly client: Axios;
 
   private applianceCache: ApplianceCache = { updated: 0, appliances: null };
   private deviceCache: DeviceCache = { updated: 0, devices: null };
 
-  constructor(
-    private readonly accessToken: string,
-  ) {}
+  constructor(accessToken: string) {
+    this.client = axios.create({
+      baseURL: API_URL,
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+  }
 
   async getAllAppliances(): Promise<Appliance[]> {
     const release = await this.mutex.acquire();
@@ -25,8 +28,7 @@ export class NatureRemoApi {
       if (this.applianceCache.appliances && (Date.now() - this.applianceCache.updated) < CACHE_THRESHOLD) {
         return this.applianceCache.appliances;
       }
-      const url = `${API_URL}/1/appliances`;
-      const appliances = await this.getMessage(url) as Appliance[];
+      const appliances = (await this.getMessage('/appliances')) as Appliance[];
       this.applianceCache = { updated: Date.now(), appliances: appliances };
       return appliances;
     } finally {
@@ -40,8 +42,7 @@ export class NatureRemoApi {
       if (this.deviceCache.devices && (Date.now() - this.deviceCache.updated) < CACHE_THRESHOLD) {
         return this.deviceCache.devices;
       }
-      const url = `${API_URL}/1/devices`;
-      const devices = await this.getMessage(url) as Device[];
+      const devices = (await this.getMessage('/devices')) as Device[];
       this.deviceCache = { updated: Date.now(), devices: devices };
       return devices;
     } finally {
@@ -93,7 +94,7 @@ export class NatureRemoApi {
   }
 
   async setLight(applianceId: string, power: boolean): Promise<void> {
-    const url = `${API_URL}/1/appliances/${applianceId}/light`;
+    const url = `/appliances/${applianceId}/light`;
     this.postMessage(url, { 'button': power ? 'on' : 'off' });
   }
 
@@ -110,72 +111,38 @@ export class NatureRemoApi {
   }
 
   private async setAirconSettings(applianceId: string, settings: Record<string, string>): Promise<void> {
-    const url = `${API_URL}/1/appliances/${applianceId}/aircon_settings`;
+    const url = `/appliances/${applianceId}/aircon_settings`;
     this.postMessage(url, settings);
   }
 
-  private getMessage(url: string): Promise<Appliance[] | Device[]> {
-    return new Promise((resolve, reject) => {
-      const options = {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-        },
-      };
-      https.get(url, options, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(this.getHttpErrorMessage(res)));
-        } else {
-          res.setEncoding('utf8');
-          let rawData = '';
-          res.on('data', (chunk) => {
-            rawData += chunk;
-          });
-          res.on('end', () => {
-            resolve(JSON.parse(rawData));
-          });
-        }
-      }).on('error', (err) => {
-        reject(err);
-      });
-    });
+  private async getMessage(url: string): Promise<Appliance[] | Device[]> {
+    try {
+      const res = await this.client.get(url);
+      return res.data;
+    } catch (error) {
+      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    }
   }
 
-  private postMessage(url: string, params: Record<string, string>): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const postData = querystring.stringify(params);
-      const options = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData),
-          'Authorization': `Bearer ${this.accessToken}`,
-        },
-      };
-      const req = https.request(url, options, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(this.getHttpErrorMessage(res)));
-        } else {
-          resolve();
-        }
-      });
-      req.on('error', (err) => {
-        reject(err);
-      });
-      req.write(postData);
-      req.end();
-    });
+  private async postMessage(url: string, params: Record<string, string>): Promise<void> {
+    try {
+      const data = new URLSearchParams(params);
+      await this.client.post(url, data.toString());
+    } catch (error) {
+      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    }
   }
  
-  private getHttpErrorMessage(res: IncomingMessage): string {
-    if (res.statusCode === 401) {
+  private getHttpErrorMessage(error: AxiosError): string {
+    if (error.response?.status === 401) {
       return 'Authorization error. Access token is wrong.';
-    } else if (res.statusCode === 429) {
-      const rateLimitLimit = res.headers['x-rate-limit-limit'];
-      const rateLimitReset = res.headers['x-rate-limit-reset'];
-      const rateLimitRemaining = res.headers['x-rate-limit-remaining'];
+    } else if (error.response?.status === 429) {
+      const rateLimitLimit = error.response?.headers['x-rate-limit-limit'];
+      const rateLimitReset = error.response?.headers['x-rate-limit-reset'];
+      const rateLimitRemaining = error.response?.headers['x-rate-limit-remaining'];
       return `Too Many Requests error. ${rateLimitLimit}, ${rateLimitReset}, ${rateLimitRemaining}`;
     } else {
-      return `HTTP error. status code ->  ${res.statusCode}`;
+      return `HTTP error. status code ->  ${error.response?.status}`;
     }
   }
 }
