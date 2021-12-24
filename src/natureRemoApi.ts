@@ -1,154 +1,102 @@
-import https from 'https';
-import querystring from 'querystring';
-import { IncomingMessage } from 'http';
+import { URLSearchParams } from 'url';
+import axios, { Axios, AxiosError } from 'axios';
+import { Mutex } from 'async-mutex';
 
-import { Mutex } from './mutex';
+import {
+  Appliance,
+  ApplianceCache,
+  Device,
+  DeviceCache,
+  SimpleAirConState,
+  SimpleLightState,
+  SimpleSensorValue,
+} from './types';
 
-const API_URL = 'https://api.nature.global';
+const API_URL = 'https://api.nature.global/1';
 const CACHE_THRESHOLD = 10 * 1000;
-
-interface Appliance {
-  id: string;
-  nickname: string;
-  type: string;
-  settings: {
-    temp: string;
-    mode: string;
-    button: string;
-  };
-  light: {
-    state: {
-      power: string;
-    };
-  };
-}
-
-interface Device {
-  id: string;
-  name: string;
-  firmware_version: string;
-  serial_number: string;
-  newest_events: {
-    te: {
-      val: number;
-    };
-    hu: {
-      val: number;
-    };
-    il: {
-      val: number;
-    };
-  };
-}
-
-interface AirConState {
-  on: boolean;
-  mode: string;
-  temp: string;
-}
-
-interface LightState {
-  on: boolean;
-}
-
-interface SensorValue {
-  te: number;
-  hu: number;
-  il: number;
-}
-
-interface Cache {
-  updated: number;
-}
-
-interface ApplianceCache extends Cache {
-  appliances: Appliance[] | null;
-}
-
-interface DeviceCache extends Cache {
-  devices: Device[] | null;
-}
 
 export class NatureRemoApi {
 
   private readonly mutex = new Mutex();
+  private readonly client: Axios;
 
   private applianceCache: ApplianceCache = { updated: 0, appliances: null };
   private deviceCache: DeviceCache = { updated: 0, devices: null };
 
-  constructor(
-    private readonly accessToken: string,
-  ) {}
+  constructor(accessToken: string) {
+    this.client = axios.create({
+      baseURL: API_URL,
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+  }
 
   async getAllAppliances(): Promise<Appliance[]> {
-    const release = await this.mutex.acquire();
-    try {
+    return await this.mutex.runExclusive(async () => {
       if (this.applianceCache.appliances && (Date.now() - this.applianceCache.updated) < CACHE_THRESHOLD) {
         return this.applianceCache.appliances;
       }
-      const url = `${API_URL}/1/appliances`;
-      const appliances = await this.getMessage(url) as Appliance[];
+      const appliances = (await this.getMessage('/appliances')) as Appliance[];
       this.applianceCache = { updated: Date.now(), appliances: appliances };
-      return appliances;
-    } finally {
-      release();
-    }
+      return appliances;  
+    });
   }
 
   async getAllDevices(): Promise<Device[]> {
-    const release = await this.mutex.acquire();
-    try {
+    return await this.mutex.runExclusive(async () => {
       if (this.deviceCache.devices && (Date.now() - this.deviceCache.updated) < CACHE_THRESHOLD) {
         return this.deviceCache.devices;
       }
-      const url = `${API_URL}/1/devices`;
-      const devices = await this.getMessage(url) as Device[];
+      const devices = (await this.getMessage('/devices')) as Device[];
       this.deviceCache = { updated: Date.now(), devices: devices };
-      return devices;
-    } finally {
-      release();
-    }
+      return devices;  
+    });
   }
 
-  async getAirConState(id: string): Promise<AirConState> {
+  async getAirConState(id: string): Promise<SimpleAirConState> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'AC' && val.id === id);
     if (appliance === undefined) {
       throw new Error(`Cannnot find appliance -> ${id}`);
     }
     return {
-      on: appliance.settings.button !== 'power-off',
-      mode: appliance.settings.mode,
-      temp: appliance.settings.temp,
+      on: appliance.settings?.button !== 'power-off',
+      mode: appliance.settings?.mode || '',
+      temp: appliance.settings?.temp || '',
     };
   }
 
-  async getLightState(id: string): Promise<LightState> {
+  async getLightState(id: string): Promise<SimpleLightState> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'LIGHT' && val.id === id);
     if (appliance === undefined) {
       throw new Error(`Cannnot find appliance -> ${id}`);
     }
     return {
-      on: appliance.light.state.power === 'on',
+      on: appliance.light?.state.power === 'on',
     };
   }
 
-  async getSensorValue(id: string): Promise<SensorValue> {
+  async getSensorValue(id: string): Promise<SimpleSensorValue> {
     const devices = await this.getAllDevices();
     const device = devices.find(val => val.id === id);
     if (device === undefined) {
       throw new Error(`Cannnot find device -> ${id}`);
     }
-    return {
-      te: device.newest_events.te?.val || 0,
-      hu: device.newest_events.hu?.val || 0,
-      il: device.newest_events.il?.val >= 0.0001 ? device.newest_events.il.val : 0.0001,
-    };
+    const val = {};
+    if (device.newest_events.te) {
+      val['te'] = device.newest_events.te.val;
+    }
+    if (device.newest_events.hu) {
+      val['hu'] = device.newest_events.hu.val;
+    }
+    if (device.newest_events.il) {
+      val['il'] = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
+    }
+    return val;
   }
 
   async setLight(applianceId: string, power: boolean): Promise<void> {
-    const url = `${API_URL}/1/appliances/${applianceId}/light`;
+    const url = `/appliances/${applianceId}/light`;
     this.postMessage(url, { 'button': power ? 'on' : 'off' });
   }
 
@@ -165,72 +113,38 @@ export class NatureRemoApi {
   }
 
   private async setAirconSettings(applianceId: string, settings: Record<string, string>): Promise<void> {
-    const url = `${API_URL}/1/appliances/${applianceId}/aircon_settings`;
+    const url = `/appliances/${applianceId}/aircon_settings`;
     this.postMessage(url, settings);
   }
 
-  private getMessage(url: string): Promise<Appliance[] | Device[]> {
-    return new Promise((resolve, reject) => {
-      const options = {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-        },
-      };
-      https.get(url, options, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(this.getHttpErrorMessage(res)));
-        } else {
-          res.setEncoding('utf8');
-          let rawData = '';
-          res.on('data', (chunk) => {
-            rawData += chunk;
-          });
-          res.on('end', () => {
-            resolve(JSON.parse(rawData));
-          });
-        }
-      }).on('error', (err) => {
-        reject(err);
-      });
-    });
+  private async getMessage(url: string): Promise<Appliance[] | Device[]> {
+    try {
+      const res = await this.client.get(url);
+      return res.data;
+    } catch (error) {
+      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    }
   }
 
-  private postMessage(url: string, params: Record<string, string>): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const postData = querystring.stringify(params);
-      const options = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData),
-          'Authorization': `Bearer ${this.accessToken}`,
-        },
-      };
-      const req = https.request(url, options, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(this.getHttpErrorMessage(res)));
-        } else {
-          resolve();
-        }
-      });
-      req.on('error', (err) => {
-        reject(err);
-      });
-      req.write(postData);
-      req.end();
-    });
+  private async postMessage(url: string, params: Record<string, string>): Promise<void> {
+    try {
+      const data = new URLSearchParams(params);
+      await this.client.post(url, data.toString());
+    } catch (error) {
+      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    }
   }
  
-  private getHttpErrorMessage(res: IncomingMessage): string {
-    if (res.statusCode === 401) {
+  private getHttpErrorMessage(error: AxiosError): string {
+    if (error.response?.status === 401) {
       return 'Authorization error. Access token is wrong.';
-    } else if (res.statusCode === 429) {
-      const rateLimitLimit = res.headers['x-rate-limit-limit'];
-      const rateLimitReset = res.headers['x-rate-limit-reset'];
-      const rateLimitRemaining = res.headers['x-rate-limit-remaining'];
+    } else if (error.response?.status === 429) {
+      const rateLimitLimit = error.response?.headers['x-rate-limit-limit'];
+      const rateLimitReset = error.response?.headers['x-rate-limit-reset'];
+      const rateLimitRemaining = error.response?.headers['x-rate-limit-remaining'];
       return `Too Many Requests error. ${rateLimitLimit}, ${rateLimitReset}, ${rateLimitRemaining}`;
     } else {
-      return `HTTP error. status code ->  ${res.statusCode}`;
+      return `HTTP error. status code ->  ${error.response?.status}`;
     }
   }
 }
