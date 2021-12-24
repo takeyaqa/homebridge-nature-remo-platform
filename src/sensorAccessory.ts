@@ -20,7 +20,7 @@ export class NatureNemoSensorAccessory {
   ) {
     const modelAndVersion = accessory.context.device.firmware_version.split('/');
     if (modelAndVersion.length < 2) {
-      modelAndVersion.push();
+      modelAndVersion.push('');
     }
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Nature')
