@@ -37,7 +37,7 @@ export class NatureRemoApi {
       }
       const appliances = (await this.getMessage('/appliances')) as Appliance[];
       this.applianceCache = { updated: Date.now(), appliances: appliances };
-      return appliances;  
+      return appliances;
     });
   }
 
@@ -48,7 +48,7 @@ export class NatureRemoApi {
       }
       const devices = (await this.getMessage('/devices')) as Device[];
       this.deviceCache = { updated: Date.now(), devices: devices };
-      return devices;  
+      return devices;
     });
   }
 
@@ -139,7 +139,7 @@ export class NatureRemoApi {
       throw new Error(this.getHttpErrorMessage(error as AxiosError));
     }
   }
- 
+
   private getHttpErrorMessage(error: AxiosError): string {
     if (error.response?.status === 401) {
       return 'Authorization error. Access token is wrong.';

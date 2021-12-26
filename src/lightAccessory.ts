@@ -13,7 +13,7 @@ export class NatureNemoLightAccessory {
   private readonly service: Service;
   private readonly name: string;
   private readonly id: string;
-  
+
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
@@ -42,7 +42,7 @@ export class NatureNemoLightAccessory {
     }).catch((err) => {
       this.platform.logger.error(err.message);
       callback(err);
-    }); 
+    });
   }
 
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
