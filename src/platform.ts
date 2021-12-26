@@ -13,6 +13,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { NatureRemoApi } from './natureRemoApi';
 import { NatureNemoLightAccessory } from './lightAccessory';
 import { NatureNemoAirConAccessory } from './airConAccessory';
+import { NatureNemoTvAccessory } from './tvAccessory';
 import { NatureNemoSensorAccessory } from './sensorAccessory';
 
 export class NatureRemoPlatform implements DynamicPlatformPlugin {
@@ -67,7 +68,7 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
     }
     const appliances = await this.natureRemoApi.getAllAppliances();
     for (const appliance of appliances) {
-      if (appliance.type === 'LIGHT' || appliance.type === 'AC') {
+      if (appliance.type === 'LIGHT' || appliance.type === 'AC' || appliance.type === 'TV') {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === appliance.id);
         if (existingAccessory) {
           this.logger.info('Restoring existing accessory from cache:', existingAccessory.displayName);
@@ -75,6 +76,8 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
             new NatureNemoLightAccessory(this, existingAccessory);
           } else if (appliance.type === 'AC') {
             new NatureNemoAirConAccessory(this, existingAccessory);
+          } else if (appliance.type === 'TV') {
+            new NatureNemoTvAccessory(this, existingAccessory);
           }
         } else {
           this.logger.info('Adding new accessory:', appliance.nickname);
@@ -84,6 +87,8 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
             new NatureNemoLightAccessory(this, accessory);
           } else if (appliance.type === 'AC') {
             new NatureNemoAirConAccessory(this, accessory);
+          } else if (appliance.type === 'TV') {
+            new NatureNemoTvAccessory(this, accessory);
           }
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         }

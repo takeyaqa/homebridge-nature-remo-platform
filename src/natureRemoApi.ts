@@ -112,6 +112,11 @@ export class NatureRemoApi {
     this.setAirconSettings(applianceId, { 'temperature': temperature });
   }
 
+  async setTvButton(applianceId: string, button: string): Promise<void> {
+    const url = `/appliances/${applianceId}/tv`;
+    this.postMessage(url, { 'button': button });
+  }
+
   private async setAirconSettings(applianceId: string, settings: Record<string, string>): Promise<void> {
     const url = `/appliances/${applianceId}/aircon_settings`;
     this.postMessage(url, settings);
