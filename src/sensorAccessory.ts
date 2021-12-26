@@ -13,7 +13,7 @@ export class NatureNemoSensorAccessory {
   private readonly service: Service;
   private readonly name: string;
   private readonly id: string;
-  
+
   constructor(
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
@@ -54,9 +54,9 @@ export class NatureNemoSensorAccessory {
     this.platform.logger.debug('[%s] id -> %s', accessory.context.device.name, accessory.context.device.id);
     this.name = accessory.context.device.name;
     this.id = accessory.context.device.id;
-  
+
     setInterval(() => {
-      this.platform.logger.info('[%s] Update sensor values', this.name);      
+      this.platform.logger.info('[%s] Update sensor values', this.name);
       this.platform.natureRemoApi.getSensorValue(this.id).then((sensorValue) => {
         if (sensorValue.te) {
           this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
