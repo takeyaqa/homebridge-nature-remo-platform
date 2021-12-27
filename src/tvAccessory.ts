@@ -17,17 +17,20 @@ export class NatureNemoTvAccessory {
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+    this.name = this.accessory.context.appliance.nickname;
+    this.id = this.accessory.context.appliance.id;
+
     this.accessory.category = this.platform.api.hap.Categories.TELEVISION;
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.appliance.id);
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id)
+      .setCharacteristic(this.platform.Characteristic.Name, this.name);
 
     this.service
       = this.accessory.getService(this.platform.Service.Television) || this.accessory.addService(this.platform.Service.Television);
-    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.appliance.nickname);
-    this.service.setCharacteristic(this.platform.Characteristic.ConfiguredName, this.accessory.context.appliance.nickname);
+    this.service.setCharacteristic(this.platform.Characteristic.ConfiguredName, this.name);
     this.service.setCharacteristic(this.platform.Characteristic.SleepDiscoveryMode,
       this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
     this.service.getCharacteristic(this.platform.Characteristic.Active)
@@ -50,9 +53,7 @@ export class NatureNemoTvAccessory {
     this.televisionSpeakerService.getCharacteristic(this.platform.Characteristic.VolumeSelector)
       .onSet(this.setVolumeSelector.bind(this));
 
-    this.platform.logger.debug('[%s] id -> %s', this.accessory.context.appliance.nickname, this.accessory.context.appliance.id);
-    this.name = this.accessory.context.appliance.nickname;
-    this.id = this.accessory.context.appliance.id;
+    this.platform.logger.debug('[%s] id -> %s', this.name, this.id);
   }
 
   async getActive(): Promise<CharacteristicValue> {
@@ -63,20 +64,15 @@ export class NatureNemoTvAccessory {
   async setActive(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setActive called ->', value);
     if (typeof value !== 'number') {
-      throw new Error('value must be a number');
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
     if (value === this.state.active) {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
       return;
     }
-    try {
-      await this.platform.natureRemoApi.setTvButton(this.id, 'power');
-      this.platform.logger.info('[%s] Active <- %s', this.name, value);
-      this.state.active = value;
-    } catch (err) {
-      this.platform.logger.error((err as Error).message);
-      throw err;
-    }
+    await this.platform.natureRemoApi.setTvButton(this.id, 'power');
+    this.platform.logger.info('[%s] Active <- %s', this.name, value);
+    this.state.active = value;
   }
 
   async getActiveIdentifier(): Promise<CharacteristicValue> {
@@ -87,7 +83,7 @@ export class NatureNemoTvAccessory {
   async setActiveIdentifier(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setActiveIdentifier called ->', value);
     if (typeof value !== 'number') {
-      throw new Error('value must be a number');
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
     if (value === this.state.activeIdentifier) {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
@@ -98,13 +94,8 @@ export class NatureNemoTvAccessory {
 
   async setRemoteKey(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setRemoteKey called ->', value);
-    try {
-      await this.platform.natureRemoApi.setTvButton(this.id, this.convertRemoteKey(value));
-      this.platform.logger.info('[%s] Remote Key <- %s', this.name, value);
-    } catch (err) {
-      this.platform.logger.error((err as Error).message);
-      throw err;
-    }
+    await this.platform.natureRemoApi.setTvButton(this.id, this.convertRemoteKey(value));
+    this.platform.logger.info('[%s] Remote Key <- %s', this.name, value);
   }
 
   async getMute(): Promise<CharacteristicValue> {
@@ -115,31 +106,21 @@ export class NatureNemoTvAccessory {
   async setMute(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setMute called ->', value);
     if (typeof value !== 'boolean') {
-      throw new Error('value must be a boolean');
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
     if (value === this.state.mute) {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
       return;
     }
-    try {
-      await this.platform.natureRemoApi.setTvButton(this.id, 'mute');
-      this.platform.logger.info('[%s] Mute <- %s', this.name, value);
-      this.state.mute = value;
-    } catch (err) {
-      this.platform.logger.error((err as Error).message);
-      throw err;
-    }
+    await this.platform.natureRemoApi.setTvButton(this.id, 'mute');
+    this.platform.logger.info('[%s] Mute <- %s', this.name, value);
+    this.state.mute = value;
   }
 
   async setVolumeSelector(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setVolumeSelector called ->', value);
-    try {
-      await this.platform.natureRemoApi.setTvButton(this.id, this.convertVolumeSelector(value));
-      this.platform.logger.info('[%s] VolumeSelector <- %s', this.name, value);
-    } catch (err) {
-      this.platform.logger.error((err as Error).message);
-      throw err;
-    }
+    await this.platform.natureRemoApi.setTvButton(this.id, this.convertVolumeSelector(value));
+    this.platform.logger.info('[%s] VolumeSelector <- %s', this.name, value);
   }
 
   private convertRemoteKey(value: CharacteristicValue): string {
@@ -171,7 +152,7 @@ export class NatureNemoTvAccessory {
       case this.platform.Characteristic.RemoteKey.INFORMATION:
         return 'display';
       default:
-        throw new Error(`This plugin does not support ${value}`);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
   }
 
@@ -181,7 +162,7 @@ export class NatureNemoTvAccessory {
     } else if (value === this.platform.Characteristic.VolumeSelector.DECREMENT) {
       return 'vol-down';
     } else {
-      throw new Error(`This plugin does not support ${value}`);
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
   }
 }

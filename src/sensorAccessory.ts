@@ -14,6 +14,9 @@ export class NatureNemoSensorAccessory {
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+    this.name = this.accessory.context.device.name;
+    this.id = this.accessory.context.device.id;
+
     this.accessory.category = this.platform.api.hap.Categories.SENSOR;
 
     const [model, version] = this.accessory.context.device.firmware_version.split('/');
@@ -22,7 +25,7 @@ export class NatureNemoSensorAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, model || '')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.device.serial_number)
       .setCharacteristic(this.platform.Characteristic.FirmwareRevision, version || '')
-      .setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.name);
+      .setCharacteristic(this.platform.Characteristic.Name, this.name);
 
     if (this.accessory.context.device.newest_events.te) {
       this.tempertureSensorservice
@@ -48,85 +51,60 @@ export class NatureNemoSensorAccessory {
         .onGet(this.getCurrentLightLevel.bind(this));
     }
 
-    this.platform.logger.debug('[%s] id -> %s', this.accessory.context.device.name, this.accessory.context.device.id);
-    this.name = this.accessory.context.device.name;
-    this.id = this.accessory.context.device.id;
+    this.platform.logger.debug('[%s] id -> %s', this.name, this.id);
 
     setInterval(async () => {
       this.platform.logger.info('[%s] Update sensor values', this.name);
-      try {
-        const sensorValue = await this.platform.natureRemoApi.getSensorValue(this.id);
-        if (sensorValue.te) {
-          this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
-          this.tempertureSensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, sensorValue.te);
-        }
-        if (sensorValue.hu) {
-          this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
-          this.humiditySensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, sensorValue.hu);
-        }
-        if (sensorValue.il) {
-          this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
-          this.lightSensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, sensorValue.il);
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          this.platform.logger.error(err.message);
-        }
+      const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+      if (device.newest_events.te) {
+        const teVal = device.newest_events.te.val;
+        this.platform.logger.info('[%s] Current Temperature -> %s', this.name, teVal);
+        this.tempertureSensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, teVal);
+      }
+      if (device.newest_events.hu) {
+        const huVal = device.newest_events.hu.val;
+        this.platform.logger.info('[%s] Current Humidity -> %s', this.name, huVal);
+        this.humiditySensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, huVal);
+      }
+      if (device.newest_events.il) {
+        const ilVal = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
+        this.platform.logger.info('[%s] Current Light Level -> %s', this.name, ilVal);
+        this.lightSensorservice?.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, ilVal);
       }
     }, UPDATE_INTERVAL);
   }
 
   async getCurrentTemperature(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentTemperature called');
-    try {
-      const sensorValue = await this.platform.natureRemoApi.getSensorValue(this.id);
-      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
-      if (sensorValue.te) {
-        return sensorValue.te;
-      } else {
-        throw new Error('cannnot get sensor value');
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        this.platform.logger.error(err.message);
-      }
-      throw err;
+    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    if (device.newest_events.te) {
+      this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.newest_events.te.val);
+      return device.newest_events.te.val;
+    } else {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
   }
 
   async getCurrentHumidity(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentHumidity called');
-    try {
-      const sensorValue = await this.platform.natureRemoApi.getSensorValue(this.id);
-      this.platform.logger.info('[%s] Current Humidity -> %s', this.name, sensorValue.hu);
-      if (sensorValue.hu) {
-        return sensorValue.hu;
-      } else {
-        throw new Error('cannnot get sensor value');
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        this.platform.logger.error(err.message);
-      }
-      throw err;
+    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    if (device.newest_events.hu) {
+      this.platform.logger.info('[%s] Current Humidity -> %s', this.name, device.newest_events.hu.val);
+      return device.newest_events.hu.val;
+    } else {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
   }
 
   async getCurrentLightLevel(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentLightLevel called');
-    try {
-      const sensorValue = await this.platform.natureRemoApi.getSensorValue(this.id);
-      this.platform.logger.info('[%s] Current Light Level -> %s', this.name, sensorValue.il);
-      if (sensorValue.il) {
-        return sensorValue.il;
-      } else {
-        throw new Error('cannnot get sensor value');
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        this.platform.logger.error(err.message);
-      }
-      throw err;
+    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    if (device.newest_events.il) {
+      const ilVal = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
+      this.platform.logger.info('[%s] Current Light Level -> %s', this.name, ilVal);
+      return ilVal;
+    } else {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
   }
 }

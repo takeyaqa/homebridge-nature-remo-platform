@@ -28,17 +28,14 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.logger.debug('accessToken ->', this.config.accessToken);
-    this.natureRemoApi = new NatureRemoApi(this.config.accessToken as string);
+    this.natureRemoApi = new NatureRemoApi(this.logger, this.api, this.config.accessToken as string);
     this.logger.debug('Finished initializing platform:', this.config.name);
 
-    this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
+    this.api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
       logger.debug('Executed didFinishLaunching callback');
-      this.discoverDevices().then(() => {
-        logger.info('Completed discover accessories');
-      }).catch((err) => {
-        logger.error(err.message);
-        throw err;
-      });
+      logger.info('Starting discover accessories');
+      await this.discoverDevices();
+      logger.info('Completed discover accessories');
     });
   }
 
