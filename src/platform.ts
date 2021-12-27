@@ -65,8 +65,10 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
     }
     const appliances = await this.natureRemoApi.getAllAppliances();
     for (const appliance of appliances) {
-      if (appliance.type === 'LIGHT' || appliance.type === 'AC' || appliance.type === 'TV') {
-        const existingAccessory = this.accessories.find(accessory => accessory.UUID === appliance.id);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === appliance.id);
+      if ((this.config.LIGHT && appliance.type === 'LIGHT')
+      || (this.config.AC && appliance.type === 'AC')
+      || (this.config.TV && appliance.type === 'TV')) {
         if (existingAccessory) {
           this.logger.info('Restoring existing accessory from cache:', existingAccessory.displayName);
           if (appliance.type === 'LIGHT') {
@@ -88,6 +90,10 @@ export class NatureRemoPlatform implements DynamicPlatformPlugin {
             new NatureNemoTvAccessory(this, accessory);
           }
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        }
+      } else {
+        if (existingAccessory) {
+          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
         }
       }
     }
