@@ -1,12 +1,4 @@
-import {
-  CharacteristicEventTypes,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
-  CharacteristicValue,
-  PlatformAccessory,
-  Service,
-} from 'homebridge';
-
+import { CharacteristicValue, PlatformAccessory, Service } from 'homebridge';
 import { NatureRemoPlatform } from './platform';
 
 export class NatureNemoAirConAccessory {
@@ -24,148 +16,146 @@ export class NatureNemoAirConAccessory {
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+    this.accessory.category = this.platform.api.hap.Categories.AIR_CONDITIONER;
+
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, accessory.context.appliance.model.manufacturer)
-      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.appliance.model.name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.appliance.id);
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
+      .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.appliance.id)
+      .setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.appliance.nickname);
 
     this.service
       = this.accessory.getService(this.platform.Service.Thermostat) || this.accessory.addService(this.platform.Service.Thermostat);
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.appliance.nickname);
-
+    this.service.setCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits,
+      this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
     this.service.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
-      .on(CharacteristicEventTypes.GET, this.getCurrentHeatingCoolingState.bind(this));
+      .onGet(this.getCurrentHeatingCoolingState.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on(CharacteristicEventTypes.GET, this.getTargetHeatingCoolingState.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTargetHeatingCoolingState.bind(this));
+      .onGet(this.getTargetHeatingCoolingState.bind(this))
+      .onSet(this.setTargetHeatingCoolingState.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
-      .on(CharacteristicEventTypes.GET, this.getCurrentTemperature.bind(this));
+      .onGet(this.getCurrentTemperature.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .on(CharacteristicEventTypes.GET, this.getTargetTemperature.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTargetTemperature.bind(this));
-    this.service.getCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits)
-      .on(CharacteristicEventTypes.GET, this.getTemperatureDisplayUnits.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTemperatureDisplayUnits.bind(this));
+      .onGet(this.getTargetTemperature.bind(this))
+      .onSet(this.setTargetTemperature.bind(this));
 
-    this.platform.logger.debug('[%s] id -> %s', accessory.context.appliance.nickname, accessory.context.appliance.id);
-    this.name = accessory.context.appliance.nickname;
-    this.id = accessory.context.appliance.id;
-    this.deviceId = accessory.context.appliance.device.id;
+    this.platform.logger.debug('[%s] id -> %s', this.accessory.context.appliance.nickname, this.accessory.context.appliance.id);
+    this.name = this.accessory.context.appliance.nickname;
+    this.id = this.accessory.context.appliance.id;
+    this.deviceId = this.accessory.context.appliance.device.id;
   }
 
-  getCurrentHeatingCoolingState(callback: CharacteristicGetCallback): void {
+  async getCurrentHeatingCoolingState(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+    try {
+      const airConState = await this.platform.natureRemoApi.getAirConState(this.id);
       this.platform.logger.info('[%s] Current Heater Cooler State -> %s, %s', this.name, airConState.on, airConState.mode);
-      const state = this.convertHeatingCoolingState(airConState.on, airConState.mode);
-      callback(null, state);
-    }).catch((err) => {
-      this.platform.logger.error(err.message);
-      callback(err);
-    });
+      return this.convertHeatingCoolingState(airConState.on, airConState.mode);
+    } catch (err) {
+      if (err instanceof Error) {
+        this.platform.logger.error(err.message);
+      }
+      throw err;
+    }
   }
 
-  getTargetHeatingCoolingState(callback: CharacteristicGetCallback): void {
+  async getTargetHeatingCoolingState(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getTargetHeatingCoolingState called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+    try {
+      const airConState = await this.platform.natureRemoApi.getAirConState(this.id);
       this.platform.logger.info('[%s] Target Heater Cooler State -> %s, %s', this.name, airConState.on, airConState.mode);
       const state = this.convertHeatingCoolingState(airConState.on, airConState.mode);
       this.state.targetHeatingCoolingState = state;
-      callback(null, state);
-    }).catch((err) => {
-      this.platform.logger.error(err.message);
-      callback(err);
-    });
+      return state;
+    } catch (err) {
+      if (err instanceof Error) {
+        this.platform.logger.error(err.message);
+      }
+      throw err;
+    }
   }
 
-  setTargetHeatingCoolingState(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  async setTargetHeatingCoolingState(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setTargetHeatingCoolingState called ->', value);
     if (typeof value !== 'number') {
-      callback(new Error('value must be a number'));
-      return;
+      throw new Error('value must be a number');
     }
     if (value === this.state.targetHeatingCoolingState) {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
-      callback(null);
       return;
     }
     this.state.targetHeatingCoolingState = value;
-    if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
-      const err = new Error('This plugin does not support auto');
-      this.platform.logger.error(err.message);
-      callback(err);
-    } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
-      this.platform.natureRemoApi.setAirconPowerOff(this.id).then(() => {
+    try {
+      if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
+        throw new Error('This plugin does not support auto');
+      } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
+        await this.platform.natureRemoApi.setAirconPowerOff(this.id);
         this.platform.logger.info('[%s] Target Heater Cooler State <- OFF', this.name);
-        callback(null);
-      }).catch((err) => {
-        this.platform.logger.error(err.message);
-        callback(err);
-      });
-    } else {
-      const mode = this.convertOperationMode(value);
-      this.platform.natureRemoApi.setAirconOperationMode(this.id, mode).then(() => {
+      } else {
+        const mode = this.convertOperationMode(value);
+        await this.platform.natureRemoApi.setAirconOperationMode(this.id, mode);
         this.platform.logger.info('[%s] Target Heater Cooler State <- %s', this.name, mode);
-        callback(null);
-      }).catch((err) => {
+      }
+    } catch (err) {
+      if (err instanceof Error) {
         this.platform.logger.error(err.message);
-        callback(err);
-      });
+      }
+      throw err;
     }
   }
 
-  getCurrentTemperature(callback: CharacteristicGetCallback): void {
-    this.platform.natureRemoApi.getSensorValue(this.deviceId).then((sensorValue) => {
+  async getCurrentTemperature(): Promise<CharacteristicValue> {
+    try {
+      const sensorValue = await this.platform.natureRemoApi.getSensorValue(this.deviceId);
       this.platform.logger.info('[%s] Current Temperature -> %s', this.name, sensorValue.te);
-      callback(null, sensorValue.te);
-    }).catch((err) => {
-      this.platform.logger.error(err.message);
-      callback(err);
-    });
+      if (sensorValue.te) {
+        return sensorValue.te;
+      } else {
+        throw new Error('cannnot get sensor value');
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        this.platform.logger.error(err.message);
+      }
+      throw err;
+    }
   }
 
-  getTargetTemperature(callback: CharacteristicGetCallback): void {
+  async getTargetTemperature(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getTargetTemperature called');
-    this.platform.natureRemoApi.getAirConState(this.id).then((airConState) => {
+    try {
+      const airConState = await this.platform.natureRemoApi.getAirConState(this.id);
       this.platform.logger.info('[%s] Target Temperature -> %s', this.name, airConState.temp);
       this.state.targetTemperature = parseFloat(airConState.temp);
-      callback(null, airConState.temp);
-    }).catch((err) => {
-      this.platform.logger.error(err.message);
-      callback(err);
-    });
+      return airConState.temp;
+    } catch (err) {
+      if (err instanceof Error) {
+        this.platform.logger.error(err.message);
+      }
+      throw err;
+    }
   }
 
-  setTargetTemperature(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  async setTargetTemperature(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setTargetTemperature called ->', value);
     if (typeof value !== 'number') {
-      callback(new Error('value must be a number'));
-      return;
+      throw new Error('value must be a number');
     }
     if (value === this.state.targetTemperature) {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
-      callback(null);
       return;
     }
     this.state.targetTemperature = value;
     const targetTemp = `${Math.round(value)}`;
-    this.platform.natureRemoApi.setAirconTemperature(this.id, targetTemp).then(() => {
+    try {
+      await this.platform.natureRemoApi.setAirconTemperature(this.id, targetTemp);
       this.platform.logger.info('[%s] Target Temperature <- %s', this.name, targetTemp);
-      callback(null);
-    }).catch((err) => {
-      this.platform.logger.error(err.message);
-      callback(err);
-    });
-  }
-
-  getTemperatureDisplayUnits(callback: CharacteristicGetCallback): void {
-    this.platform.logger.debug('getTemperatureDisplayUnits called');
-    callback(null, this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS);
-  }
-
-  setTemperatureDisplayUnits(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
-    this.platform.logger.debug('setTemperatureDisplayUnits called ->', value);
-    callback(null);
+    } catch (err) {
+      if (err instanceof Error) {
+        this.platform.logger.error(err.message);
+      }
+      throw err;
+    }
   }
 
   private convertHeatingCoolingState(on: boolean, mode: string): number {
@@ -183,13 +173,12 @@ export class NatureNemoAirConAccessory {
   }
 
   private convertOperationMode(state: number): string {
-    switch (state) {
-      case this.platform.Characteristic.TargetHeatingCoolingState.HEAT:
-        return 'warm';
-      case this.platform.Characteristic.TargetHeatingCoolingState.COOL:
-        return 'cool';
-      default:
-        throw new Error(`This plugin does not support ${state}`);
+    if (state === this.platform.Characteristic.TargetHeatingCoolingState.HEAT) {
+      return 'warm';
+    } else if (state === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
+      return 'cool';
+    } else {
+      throw new Error(`This plugin does not support ${state}`);
     }
   }
 }
