@@ -3,7 +3,7 @@
 [![npm](https://badgen.net/npm/v/@takeya0x86/homebridge-nature-remo-platform?icon=npm&label)](https://www.npmjs.com/package/@takeya0x86/homebridge-nature-remo-platform)
 [![Build and Lint](https://github.com/takeya0x86/homebridge-nature-remo-platform/actions/workflows/build.yml/badge.svg)](https://github.com/takeya0x86/homebridge-nature-remo-platform/actions/workflows/build.yml)
 
-Homebridge plugin for Nature Remo which supports lights and air conditioners. **This plugin is unofficial.**
+Homebridge plugin for Nature Remo which supports lights, air conditioners and TVs. **This plugin is unofficial.**
 
 ## Requirements
 
@@ -36,7 +36,23 @@ Allows for on/off controls.
 
 Allows for on/off, temperature and mode changing controls. The mode changing only supports heating and cooling. Auto, dehumidification, blowing and any other mode are not supported.
 
+### TVs
+
+Allows for on/off controls.
+
 ## Changelog
+
+### v2.0.0-beta.1
+
+- [#12](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/12) Refactor API client
+- [#13](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/13) Recognize model type by actual sensor data 
+- [#14](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/14) Enhance TV type appliance
+- [#15](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/15) Update eslint settings
+- [#16](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/16) Refactor sensor accessory
+- [#17](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/17) Refactor light accessory
+- [#18](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/18) Refactor Air Con accessory
+- [#19](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/19) Refactor error handling and logger
+- [#20](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/20) Add config option
 
 ### v1.3.0 (2021-12-17)
 
