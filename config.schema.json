@@ -15,7 +15,37 @@
         "title": "Access Token",
         "type": "string",
         "required": true
+      },
+      "LIGHT": {
+        "title": "Light",
+        "type": "boolean",
+        "default": true
+      },
+      "AC": {
+        "title": "Air Conditioner",
+        "type": "boolean",
+        "default": true
+      },
+      "TV": {
+        "title": "TV",
+        "type": "boolean",
+        "default": true
       }
     }
-  }
+  },
+  "layout": [
+    "name",
+    "accessToken",
+    {
+      "type": "fieldset",
+      "title": "Appliance Type",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "LIGHT",
+        "AC",
+        "TV"
+      ]
+    }
+  ]
 }
