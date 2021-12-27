@@ -146,31 +146,3 @@ export interface EchonetLiteProperty {
   val: string;
   updated_at: DateTime;
 }
-
-export interface SimpleAirConState {
-  on: boolean;
-  mode: string;
-  temp: string;
-}
-
-export interface SimpleLightState {
-  on: boolean;
-}
-
-export interface SimpleSensorValue {
-  te?: number;
-  hu?: number;
-  il?: number;
-}
-
-export interface Cache {
-  updated: number;
-}
-
-export interface ApplianceCache extends Cache {
-  appliances: Appliance[] | null;
-}
-
-export interface DeviceCache extends Cache {
-  devices: Device[] | null;
-}

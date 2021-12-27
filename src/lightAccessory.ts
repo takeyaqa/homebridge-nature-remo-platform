@@ -10,51 +10,38 @@ export class NatureNemoLightAccessory {
     private readonly platform: NatureRemoPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+    this.name = this.accessory.context.appliance.nickname;
+    this.id = this.accessory.context.appliance.id;
+
     this.accessory.category = this.platform.api.hap.Categories.LIGHTBULB;
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.appliance.id)
-      .setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.appliance.nickname);
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id)
+      .setCharacteristic(this.platform.Characteristic.Name, this.name);
 
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
     this.service.getCharacteristic(this.platform.Characteristic.On)
       .onGet(this.getOn.bind(this))
       .onSet(this.setOn.bind(this));
 
-    this.platform.logger.debug('[%s] id -> %s', this.accessory.context.appliance.nickname, this.accessory.context.appliance.id);
-    this.name = this.accessory.context.appliance.nickname;
-    this.id = this.accessory.context.appliance.id;
+    this.platform.logger.debug('[%s] id -> %s', this.name, this.id);
   }
 
   async getOn(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getOn called');
-    try {
-      const lightState = await this.platform.natureRemoApi.getLightState(this.id);
-      this.platform.logger.info('[%s] On -> %s', this.name, lightState.on);
-      return lightState.on;
-    } catch (err) {
-      if (err instanceof Error) {
-        this.platform.logger.error(err.message);
-      }
-      throw err;
-    }
+    const lightState = await this.platform.natureRemoApi.getLightState(this.id);
+    this.platform.logger.info('[%s] Power -> %s', this.name, lightState.power);
+    return lightState.power === 'on';
   }
 
   async setOn(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setOn called ->', value);
     if (typeof value !== 'boolean') {
-      throw new Error('value must be a boolean');
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
-    try {
-      await this.platform.natureRemoApi.setLight(this.id, value);
-      this.platform.logger.info('[%s] On <- %s', this.name, value);
-    } catch (err) {
-      if (err instanceof Error) {
-        this.platform.logger.error(err.message);
-      }
-      throw err;
-    }
+    await this.platform.natureRemoApi.setLight(this.id, value);
+    this.platform.logger.info('[%s] On <- %s', this.name, value);
   }
 }

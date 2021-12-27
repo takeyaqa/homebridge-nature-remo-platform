@@ -1,16 +1,20 @@
 import { URLSearchParams } from 'url';
 import axios, { Axios, AxiosError } from 'axios';
 import { Mutex } from 'async-mutex';
+import { API, HapStatusError, Logger } from 'homebridge';
+import { AirConParams, Appliance, Device, LIGHTState } from './types';
 
-import {
-  Appliance,
-  ApplianceCache,
-  Device,
-  DeviceCache,
-  SimpleAirConState,
-  SimpleLightState,
-  SimpleSensorValue,
-} from './types';
+interface Cache {
+  updated: number;
+}
+
+interface ApplianceCache extends Cache {
+  appliances: Appliance[] | null;
+}
+
+interface DeviceCache extends Cache {
+  devices: Device[] | null;
+}
 
 const API_URL = 'https://api.nature.global/1';
 const CACHE_THRESHOLD = 10 * 1000;
@@ -23,7 +27,10 @@ export class NatureRemoApi {
   private applianceCache: ApplianceCache = { updated: 0, appliances: null };
   private deviceCache: DeviceCache = { updated: 0, devices: null };
 
-  constructor(accessToken: string) {
+  constructor(
+    private readonly logger: Logger,
+    private readonly api: API,
+    accessToken: string) {
     this.client = axios.create({
       baseURL: API_URL,
       headers: { 'Authorization': `Bearer ${accessToken}` },
@@ -52,47 +59,31 @@ export class NatureRemoApi {
     });
   }
 
-  async getAirConState(id: string): Promise<SimpleAirConState> {
+  async getAirConState(id: string): Promise<AirConParams> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'AC' && val.id === id);
-    if (appliance === undefined) {
-      throw new Error(`Cannnot find appliance -> ${id}`);
+    if (appliance?.settings === undefined) {
+      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
-    return {
-      on: appliance.settings?.button !== 'power-off',
-      mode: appliance.settings?.mode || '',
-      temp: appliance.settings?.temp || '',
-    };
+    return appliance.settings;
   }
 
-  async getLightState(id: string): Promise<SimpleLightState> {
+  async getLightState(id: string): Promise<LIGHTState> {
     const appliances = await this.getAllAppliances();
     const appliance = appliances.find(val => val.type === 'LIGHT' && val.id === id);
-    if (appliance === undefined) {
-      throw new Error(`Cannnot find appliance -> ${id}`);
+    if (appliance?.light === undefined) {
+      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
-    return {
-      on: appliance.light?.state.power === 'on',
-    };
+    return appliance.light.state;
   }
 
-  async getSensorValue(id: string): Promise<SimpleSensorValue> {
+  async getSensorValue(id: string): Promise<Device> {
     const devices = await this.getAllDevices();
     const device = devices.find(val => val.id === id);
     if (device === undefined) {
-      throw new Error(`Cannnot find device -> ${id}`);
+      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
-    const val = {};
-    if (device.newest_events.te) {
-      val['te'] = device.newest_events.te.val;
-    }
-    if (device.newest_events.hu) {
-      val['hu'] = device.newest_events.hu.val;
-    }
-    if (device.newest_events.il) {
-      val['il'] = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
-    }
-    return val;
+    return device;
   }
 
   async setLight(applianceId: string, power: boolean): Promise<void> {
@@ -126,8 +117,8 @@ export class NatureRemoApi {
     try {
       const res = await this.client.get(url);
       return res.data;
-    } catch (error) {
-      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    } catch (err) {
+      throw this.convertToHapStatusError(err as AxiosError);
     }
   }
 
@@ -135,21 +126,24 @@ export class NatureRemoApi {
     try {
       const data = new URLSearchParams(params);
       await this.client.post(url, data.toString());
-    } catch (error) {
-      throw new Error(this.getHttpErrorMessage(error as AxiosError));
+    } catch (err) {
+      throw this.convertToHapStatusError(err as AxiosError);
     }
   }
 
-  private getHttpErrorMessage(error: AxiosError): string {
+  private convertToHapStatusError(error: AxiosError): HapStatusError {
     if (error.response?.status === 401) {
-      return 'Authorization error. Access token is wrong.';
+      this.logger.error('Authorization error. Access token is wrong.');
+      return new this.api.hap.HapStatusError(this.api.hap.HAPStatus.INSUFFICIENT_AUTHORIZATION);
     } else if (error.response?.status === 429) {
       const rateLimitLimit = error.response?.headers['x-rate-limit-limit'];
       const rateLimitReset = error.response?.headers['x-rate-limit-reset'];
       const rateLimitRemaining = error.response?.headers['x-rate-limit-remaining'];
-      return `Too Many Requests error. ${rateLimitLimit}, ${rateLimitReset}, ${rateLimitRemaining}`;
+      this.logger.error(`Too Many Requests error. ${rateLimitLimit}, ${rateLimitReset}, ${rateLimitRemaining}`);
+      return new this.api.hap.HapStatusError(this.api.hap.HAPStatus.RESOURCE_BUSY);
     } else {
-      return `HTTP error. status code ->  ${error.response?.status}`;
+      this.logger.error(`HTTP error. status code ->  ${error.response?.status}`);
+      return new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
   }
 }
