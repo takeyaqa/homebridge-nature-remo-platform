@@ -1,12 +1,12 @@
-type ApplianceType = 'AC' | 'TV' | 'LIGHT' | 'IR' | 'EL_SMART_METER';
-type Id = string;
-type Image = string;
-type DateTime = string;
-type OperationMode = '' | 'cool' | 'warm' | 'dry' | 'blow' | 'auto';
-type Temperature = string;
-type AirVolume = '' | 'auto' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10';
-type AirDirection = string;
-type ACButton = '' | 'power-off';
+export type ApplianceType = 'AC' | 'TV' | 'LIGHT' | 'IR' | 'EL_SMART_METER';
+export type Id = string;
+export type Image = string;
+export type DateTime = string;
+export type OperationMode = '' | 'cool' | 'warm' | 'dry' | 'blow' | 'auto';
+export type Temperature = string;
+export type AirVolume = '' | 'auto' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10';
+export type AirDirection = string;
+export type ACButton = '' | 'power-off';
 
 export interface User {
   id: Id;

@@ -38,7 +38,7 @@ Allows for on/off, temperature and mode changing controls. The mode changing onl
 
 ### TVs
 
-Allows for on/off controls.
+Allows for on/off and volume controls.
 
 ## Changelog
 

@@ -2,7 +2,8 @@ import { URLSearchParams } from 'url';
 import axios, { Axios, AxiosError } from 'axios';
 import { Mutex } from 'async-mutex';
 import { API, HapStatusError, Logger } from 'homebridge';
-import { AirConParams, Appliance, Device, LIGHTState } from './types';
+import { ACButton, AirConParams, Appliance, Device, LIGHTState, OperationMode } from './types';
+import { API_URL, CACHE_THRESHOLD } from './settings';
 
 interface Cache {
   updated: number;
@@ -16,8 +17,7 @@ interface DeviceCache extends Cache {
   devices: Device[] | null;
 }
 
-const API_URL = 'https://api.nature.global/1';
-const CACHE_THRESHOLD = 10 * 1000;
+type AirConSettings = { button?: ACButton; operation_mode?: OperationMode; temperature?: string };
 
 export class NatureRemoApi {
 
@@ -77,7 +77,7 @@ export class NatureRemoApi {
     return appliance.light.state;
   }
 
-  async getSensorValue(id: string): Promise<Device> {
+  async getDevice(id: string): Promise<Device> {
     const devices = await this.getAllDevices();
     const device = devices.find(val => val.id === id);
     if (device === undefined) {
@@ -86,16 +86,16 @@ export class NatureRemoApi {
     return device;
   }
 
-  async setLight(applianceId: string, power: boolean): Promise<void> {
+  async setLight(applianceId: string, power: 'on' | 'off'): Promise<void> {
     const url = `/appliances/${applianceId}/light`;
-    this.postMessage(url, { 'button': power ? 'on' : 'off' });
+    this.postMessage(url, { 'button': power });
   }
 
   async setAirconPowerOff(applianceId: string): Promise<void> {
     this.setAirconSettings(applianceId, { 'button': 'power-off'});
   }
 
-  async setAirconOperationMode(applianceId: string, operationMode: string): Promise<void> {
+  async setAirconOperationMode(applianceId: string, operationMode: OperationMode): Promise<void> {
     this.setAirconSettings(applianceId, { 'operation_mode': operationMode, 'button': '' });
   }
 
@@ -108,7 +108,7 @@ export class NatureRemoApi {
     this.postMessage(url, { 'button': button });
   }
 
-  private async setAirconSettings(applianceId: string, settings: Record<string, string>): Promise<void> {
+  private async setAirconSettings(applianceId: string, settings: AirConSettings): Promise<void> {
     const url = `/appliances/${applianceId}/aircon_settings`;
     this.postMessage(url, settings);
   }

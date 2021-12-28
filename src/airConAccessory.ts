@@ -25,6 +25,7 @@ export class NatureNemoAirConAccessory {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.accessory.context.appliance.device.firmware_version)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id)
       .setCharacteristic(this.platform.Characteristic.Name, this.name);
 
@@ -71,22 +72,23 @@ export class NatureNemoAirConAccessory {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
       return;
     }
-    this.state.targetHeatingCoolingState = value;
     if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
       this.platform.logger.error('This plugin does not support auto');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
       await this.platform.natureRemoApi.setAirconPowerOff(this.id);
       this.platform.logger.info('[%s] Target Heater Cooler State <- OFF', this.name);
+      this.state.targetHeatingCoolingState = value;
     } else {
       const mode = this.convertOperationMode(value);
       await this.platform.natureRemoApi.setAirconOperationMode(this.id, mode);
       this.platform.logger.info('[%s] Target Heater Cooler State <- %s', this.name, mode);
+      this.state.targetHeatingCoolingState = value;
     }
   }
 
   async getCurrentTemperature(): Promise<CharacteristicValue> {
-    const device = await this.platform.natureRemoApi.getSensorValue(this.deviceId);
+    const device = await this.platform.natureRemoApi.getDevice(this.deviceId);
     if (device.newest_events.te) {
       this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.newest_events.te.val);
       return device.newest_events.te.val;
@@ -132,7 +134,7 @@ export class NatureNemoAirConAccessory {
     }
   }
 
-  private convertOperationMode(state: number): string {
+  private convertOperationMode(state: number): 'warm' | 'cool' {
     if (state === this.platform.Characteristic.TargetHeatingCoolingState.HEAT) {
       return 'warm';
     } else if (state === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
