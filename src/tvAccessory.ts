@@ -25,6 +25,7 @@ export class NatureNemoTvAccessory {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.accessory.context.appliance.device.firmware_version)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id)
       .setCharacteristic(this.platform.Characteristic.Name, this.name);
 

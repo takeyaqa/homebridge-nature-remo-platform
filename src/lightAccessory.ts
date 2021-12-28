@@ -18,6 +18,7 @@ export class NatureNemoLightAccessory {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.accessory.context.appliance.model.manufacturer)
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.appliance.model.name)
+      .setCharacteristic(this.platform.Characteristic.FirmwareRevision, this.accessory.context.appliance.device.firmware_version)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.id)
       .setCharacteristic(this.platform.Characteristic.Name, this.name);
 
@@ -41,7 +42,8 @@ export class NatureNemoLightAccessory {
     if (typeof value !== 'boolean') {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST);
     }
-    await this.platform.natureRemoApi.setLight(this.id, value);
-    this.platform.logger.info('[%s] On <- %s', this.name, value);
+    const power = value ? 'on' : 'off';
+    await this.platform.natureRemoApi.setLight(this.id, power);
+    this.platform.logger.info('[%s] Power <- %s', this.name, power);
   }
 }

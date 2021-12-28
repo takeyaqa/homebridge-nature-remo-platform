@@ -1,7 +1,6 @@
 import { CharacteristicValue, PlatformAccessory, Service } from 'homebridge';
 import { NatureRemoPlatform } from './platform';
-
-const UPDATE_INTERVAL = 1000 * 60 * 5;
+import { UPDATE_INTERVAL } from './settings';
 
 export class NatureNemoSensorAccessory {
   private readonly tempertureSensorservice?: Service;
@@ -55,7 +54,7 @@ export class NatureNemoSensorAccessory {
 
     setInterval(async () => {
       this.platform.logger.info('[%s] Update sensor values', this.name);
-      const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+      const device = await this.platform.natureRemoApi.getDevice(this.id);
       if (device.newest_events.te) {
         const teVal = device.newest_events.te.val;
         this.platform.logger.info('[%s] Current Temperature -> %s', this.name, teVal);
@@ -76,7 +75,7 @@ export class NatureNemoSensorAccessory {
 
   async getCurrentTemperature(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentTemperature called');
-    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    const device = await this.platform.natureRemoApi.getDevice(this.id);
     if (device.newest_events.te) {
       this.platform.logger.info('[%s] Current Temperature -> %s', this.name, device.newest_events.te.val);
       return device.newest_events.te.val;
@@ -87,7 +86,7 @@ export class NatureNemoSensorAccessory {
 
   async getCurrentHumidity(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentHumidity called');
-    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    const device = await this.platform.natureRemoApi.getDevice(this.id);
     if (device.newest_events.hu) {
       this.platform.logger.info('[%s] Current Humidity -> %s', this.name, device.newest_events.hu.val);
       return device.newest_events.hu.val;
@@ -98,7 +97,7 @@ export class NatureNemoSensorAccessory {
 
   async getCurrentLightLevel(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getCurrentLightLevel called');
-    const device = await this.platform.natureRemoApi.getSensorValue(this.id);
+    const device = await this.platform.natureRemoApi.getDevice(this.id);
     if (device.newest_events.il) {
       const ilVal = device.newest_events.il.val >= 0.0001 ? device.newest_events.il.val : 0.0001;
       this.platform.logger.info('[%s] Current Light Level -> %s', this.name, ilVal);
