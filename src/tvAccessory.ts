@@ -59,6 +59,7 @@ export class NatureNemoTvAccessory {
 
   async getActive(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getActive called');
+    this.platform.logger.info('[%s] Active -> %s', this.name, this.state.active === this.platform.Characteristic.Active.ACTIVE);
     return this.state.active;
   }
 
@@ -72,12 +73,13 @@ export class NatureNemoTvAccessory {
       return;
     }
     await this.platform.natureRemoApi.setTvButton(this.id, 'power');
-    this.platform.logger.info('[%s] Active <- %s', this.name, value);
+    this.platform.logger.info('[%s] Active <- %s', this.name, value === this.platform.Characteristic.Active.ACTIVE);
     this.state.active = value;
   }
 
   async getActiveIdentifier(): Promise<CharacteristicValue> {
-    this.platform.logger.debug('getAgetActiveIdentifierctive called');
+    this.platform.logger.debug('getActiveIdentifier called');
+    this.platform.logger.info('[%s] ActiveIdentifierctive -> %s', this.name, this.state.activeIdentifier);
     return this.state.activeIdentifier;
   }
 
@@ -90,17 +92,20 @@ export class NatureNemoTvAccessory {
       this.platform.logger.debug('[%s] Same state. skip sending', this.name);
       return;
     }
+    this.platform.logger.info('[%s] ActiveIdentifierctive <- %s', this.name, value);
     this.state.activeIdentifier = value;
   }
 
   async setRemoteKey(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setRemoteKey called ->', value);
-    await this.platform.natureRemoApi.setTvButton(this.id, this.convertRemoteKey(value));
-    this.platform.logger.info('[%s] Remote Key <- %s', this.name, value);
+    const key = this.convertRemoteKey(value);
+    await this.platform.natureRemoApi.setTvButton(this.id, key);
+    this.platform.logger.info('[%s] Remote Key <- %s', this.name, key);
   }
 
   async getMute(): Promise<CharacteristicValue> {
     this.platform.logger.debug('getMute called');
+    this.platform.logger.info('[%s] Mute -> %s', this.name, this.state.mute);
     return this.state.mute;
   }
 
@@ -120,8 +125,9 @@ export class NatureNemoTvAccessory {
 
   async setVolumeSelector(value: CharacteristicValue): Promise<void> {
     this.platform.logger.debug('setVolumeSelector called ->', value);
-    await this.platform.natureRemoApi.setTvButton(this.id, this.convertVolumeSelector(value));
-    this.platform.logger.info('[%s] VolumeSelector <- %s', this.name, value);
+    const key = this.convertVolumeSelector(value);
+    await this.platform.natureRemoApi.setTvButton(this.id, key);
+    this.platform.logger.info('[%s] VolumeSelector <- %s', this.name, key);
   }
 
   private convertRemoteKey(value: CharacteristicValue): string {

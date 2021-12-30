@@ -1,6 +1,6 @@
 import { URLSearchParams } from 'url';
-import axios, { Axios, AxiosError } from 'axios';
 import { Mutex } from 'async-mutex';
+import axios, { AxiosError } from 'axios';
 import { API, HapStatusError, Logger } from 'homebridge';
 import { ACButton, AirConParams, Appliance, Device, LIGHTState, OperationMode } from './types';
 import { API_URL, CACHE_THRESHOLD } from './settings';
@@ -22,7 +22,6 @@ type AirConSettings = { button?: ACButton; operation_mode?: OperationMode; tempe
 export class NatureRemoApi {
 
   private readonly mutex = new Mutex();
-  private readonly client: Axios;
 
   private applianceCache: ApplianceCache = { updated: 0, appliances: null };
   private deviceCache: DeviceCache = { updated: 0, devices: null };
@@ -31,10 +30,9 @@ export class NatureRemoApi {
     private readonly logger: Logger,
     private readonly api: API,
     accessToken: string) {
-    this.client = axios.create({
-      baseURL: API_URL,
-      headers: { 'Authorization': `Bearer ${accessToken}` },
-    });
+    axios.defaults.baseURL = API_URL;
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
   }
 
   async getAllAppliances(): Promise<Appliance[]> {
@@ -115,7 +113,7 @@ export class NatureRemoApi {
 
   private async getMessage(url: string): Promise<Appliance[] | Device[]> {
     try {
-      const res = await this.client.get(url);
+      const res = await axios.get(url);
       return res.data;
     } catch (err) {
       throw this.convertToHapStatusError(err as AxiosError);
@@ -125,7 +123,7 @@ export class NatureRemoApi {
   private async postMessage(url: string, params: Record<string, string>): Promise<void> {
     try {
       const data = new URLSearchParams(params);
-      await this.client.post(url, data.toString());
+      await axios.post(url, data.toString());
     } catch (err) {
       throw this.convertToHapStatusError(err as AxiosError);
     }
