@@ -42,7 +42,7 @@ Allows for on/off and volume controls.
 
 ## Changelog
 
-### v2.0.0-beta.2
+### v2.0.0-rc.1
 
 - [#12](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/12) Refactor API client
 - [#13](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/13) Recognize model type by actual sensor data 
@@ -54,6 +54,7 @@ Allows for on/off and volume controls.
 - [#19](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/19) Refactor error handling and logger
 - [#20](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/20) Add config option
 - [#22](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/22) fix component
+- [#24](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/24) improve log and axios
 
 ### v1.3.0 (2021-12-17)
 
