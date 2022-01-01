@@ -44,8 +44,8 @@ Allows for on/off and volume controls.
 
 ### v2.0.0 (2021-01-01)
 
-- (New Feature) Supports TV type appliance.
-- (New Feature) Add config option which enable to choose appliance type
+- (*New Feature*) Supports TV type appliance.
+- (*New Feature*) Add config option which enable to choose appliance type
 
 #### Related pull requests
 
