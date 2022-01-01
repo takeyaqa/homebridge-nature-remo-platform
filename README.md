@@ -42,7 +42,12 @@ Allows for on/off and volume controls.
 
 ## Changelog
 
-### v2.0.0-rc.1
+### v2.0.0 (2021-01-01)
+
+- (New Feature) Supports TV type appliance.
+- (New Feature) Add config option which enable to choose appliance type
+
+#### Related pull requests
 
 - [#12](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/12) Refactor API client
 - [#13](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/13) Recognize model type by actual sensor data 
