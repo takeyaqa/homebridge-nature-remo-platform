@@ -42,6 +42,10 @@ Allows for on/off and volume controls.
 
 ## Changelog
 
+### v2.0.1 (2022-03-19)
+
+- [#28](https://github.com/takeya0x86/homebridge-nature-remo-platform/pull/28) Bump follow-redirects from 1.14.6 to 1.14.8
+
 ### v2.0.0 (2022-01-01)
 
 - (*New Feature*) Supports TV type appliance.
