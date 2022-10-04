@@ -1,4 +1,4 @@
-** This project is no longer maintained. We recommend you to use other plugin. **
+**This project is no longer maintained. We recommend you to use other plugin.**
 
 # Homebridge Nature Remo Platform
 
