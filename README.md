@@ -1,3 +1,5 @@
+** This project is no longer maintained. We recommend you to use other plugin. **
+
 # Homebridge Nature Remo Platform
 
 [![npm](https://badgen.net/npm/v/@takeya0x86/homebridge-nature-remo-platform?icon=npm&label)](https://www.npmjs.com/package/@takeya0x86/homebridge-nature-remo-platform)
